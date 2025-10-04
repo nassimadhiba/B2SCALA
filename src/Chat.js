@@ -1,9 +1,12 @@
 import { useState, useRef, useEffect } from "react";
+import { Send, Paperclip, Sparkles, Code, BookOpen, Zap } from "lucide-react";
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const bottomRef = useRef(null);
 
   const handleSubmit = async (e) => {
@@ -17,7 +20,7 @@ export default function Chat() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("https://409ab2550b9e.ngrok-free.app/ask", {
+      const response = await fetch("https://b824edd095bd.ngrok-free.app/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: currentQuery })
@@ -39,10 +42,59 @@ export default function Chat() {
     }
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const uploadMessage = { 
+      role: "bot", 
+      text: `📤 Téléchargement de "${file.name}" en cours...` 
+    };
+    setMessages((prev) => [...prev, uploadMessage]);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("https://b824edd095bd.ngrok-free.app/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+      
+      if (data.status === "success") {
+        const successMessage = { 
+          role: "bot", 
+          text: `✅ ${data.message}` 
+        };
+        setMessages((prev) => [...prev, successMessage]);
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (err) {
+      const errorMessage = { 
+        role: "bot", 
+        text: `❌ Erreur lors du téléchargement: ${err.message}` 
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const sendQuickMessage = (message) => {
     setQuery(message);
-    const event = { preventDefault: () => {} };
-    setTimeout(() => handleSubmit(event), 100);
+    setTimeout(() => {
+      const event = { preventDefault: () => {} };
+      handleSubmit(event);
+    }, 100);
   };
 
   useEffect(() => {
@@ -50,7 +102,7 @@ export default function Chat() {
   }, [messages, isLoading]);
 
   const formatMessage = (text) => {
-    const regex = /```(.*?)```/gs;
+    const regex = /```[\s\S]*?```/g;
     const parts = [];
     let lastIndex = 0;
     let match;
@@ -59,7 +111,8 @@ export default function Chat() {
       if (match.index > lastIndex) {
         parts.push({ type: "text", content: text.slice(lastIndex, match.index) });
       }
-      parts.push({ type: "code", content: match[1] });
+      const codeContent = match[0].replace(/```(\w+)?\n?/, '').replace(/\n?```$/, '');
+      parts.push({ type: "code", content: codeContent });
       lastIndex = regex.lastIndex;
     }
 
@@ -69,139 +122,133 @@ export default function Chat() {
 
     return parts.map((part, i) =>
       part.type === "code" ? (
-        <pre key={i} style={{
-          background: '#ffffffff',
-          color: '#030b13ff',
-          padding: '12px',
-          borderRadius: '8px',
-          overflowX: 'auto',
-          fontFamily: 'monospace'
-        }}>
-          <code>{part.content}</code>
+        <pre key={i} style={{background: '#ffffff', color: '#1e293b', padding: '16px', borderRadius: '12px', overflowX: 'auto', margin: '16px 0', fontFamily: 'Consolas, Monaco, monospace', fontSize: '13px', border: '1px solid #e2e8f0', lineHeight: '1.5', maxWidth: '100%', textAlign: 'left'}}>
+          <code style={{display: 'block', whiteSpace: 'pre', textAlign: 'left'}}>{part.content}</code>
         </pre>
       ) : (
-        <span key={i} style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+        <span key={i} style={{whiteSpace: 'pre-wrap', lineHeight: '1.7', display: 'block'}}>
           {part.content}
         </span>
       )
     );
   };
 
-  // 🎨 Styles modernisés
-  const containerStyle = { 
-    height: '100vh', 
-    overflow: 'hidden', 
-    background: '#fcfeffff', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    padding: '0px', 
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' 
-  };
-
-  const chatContainerStyle = { 
-    width: '100%', 
-    maxWidth: '4000px', 
-    height: '90vh', 
-    background: '#ffffff', 
-    borderRadius: '15px', 
-    boxShadow: '0 8px 30px rgba(209, 192, 192, 0.12)', 
-    border: '1px solid #d1d5db', 
-    overflow: 'hidden', 
-    display: 'flex', 
-    flexDirection: 'column' 
-  };
-
-  const messagesStyle = { flex: 1, overflowY: 'auto', padding: '25px', background: '#e9f0ff' };
-
-  const headerStyle = { background: 'linear-gradient(135deg, #3b82f6, #60a5fa)', padding: '2px', color: 'white', textAlign: 'center', position: 'relative', overflow: 'hidden' };
-  const avatarStyle = { width: '50px', height: '50px', background: 'linear-gradient(45deg, #2543d7ff, #3b82f6)', borderRadius: '50%', margin: '0 auto 15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', animation: 'bounce 2s infinite' };
-  const titleStyle = { fontSize: '15px', fontWeight: 'bold', marginBottom: '0px' };
-  const statusStyle = { fontSize: '14px', opacity: 0.9, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' };
-  const statusDotStyle = { width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%', animation: 'blink 1.5s infinite' };
-  const welcomeStyle = { textAlign: 'center', padding: '40px 20px', color: '#041123ff' };
-  const quickActionsStyle = { display: 'flex', gap: '8px', marginTop: '20px', flexWrap: 'wrap', justifyContent: 'center' };
-  const quickActionStyle = { background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#3b82f6', padding: '8px 15px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', transition: 'all 0.3s ease', fontWeight: '500' };
-  const messageStyle = (isUser) => ({ marginBottom: '20px', textAlign: isUser ? 'right' : 'left', animation: 'slideIn 0.5s ease-out' });
-  const messageBubbleStyle = (isUser) => ({
-    display: 'inline-block',
-    maxWidth: '75%',
-    padding: '12px 18px',
-    borderRadius: '18px',
-    fontSize: '14px',
-    lineHeight: '1.5',
-    background: isUser ? 'linear-gradient(135deg, #113b95ff, #60a5fa)' : 'linear-gradient(135deg, #051e62ff, #36249dff)',
-    color: 'white',
-    borderBottomLeftRadius: isUser ? '18px' : '6px',
-    borderBottomRightRadius: isUser ? '6px' : '18px'
-  });
-
-  const timeStyle = (isUser) => ({ fontSize: '11px', opacity: 0.7, marginTop: '5px', color: '#64748b', textAlign: isUser ? 'right' : 'left' });
-  const typingStyle = { marginBottom: '20px', animation: 'slideIn 0.5s ease-out' };
-  const typingBubbleStyle = { background: '#e0e7ff', padding: '12px 18px', borderRadius: '18px', borderBottomLeftRadius: '6px', display: 'inline-block' };
-  const typingDotsStyle = { display: 'flex', gap: '4px', alignItems: 'center' };
-  const typingDotStyle = (delay) => ({ width: '8px', height: '8px', background: '#1d1fadff', borderRadius: '50%', animation: `typingDots 1.4s infinite ${delay}s` });
-  const inputContainerStyle = { padding: '25px', background: 'white' };
-  const inputWrapperStyle = { display: 'flex', alignItems: 'center', background: '#dbeafe', borderRadius: '25px', padding: '5px', transition: 'all 0.3s ease' };
-  const inputStyle = { flex: '1', border: 'none', outline: 'none', padding: '12px 16px', fontSize: '14px', background: 'transparent', borderRadius: '20px' };
-  const sendButtonStyle = { width: '40px', height: '40px', border: 'none', background: !query.trim() || isLoading ? '#c7d2fe' : 'linear-gradient(135deg, #3b82f6, #60a5fa)', color: 'white', borderRadius: '50%', cursor: !query.trim() || isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', transition: 'all 0.3s ease', transform: 'scale(1)' };
-
   return (
     <>
       <style>{`
-        @keyframes bounce {0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 60% { transform: translateY(-5px); }}
-        @keyframes blink {0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; }}
-        @keyframes slideIn {from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); }}
-        @keyframes typingDots {0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-8px); opacity: 1; }}
-        @keyframes spin {0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }}
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes typing {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+          30% { transform: translateY(-8px); opacity: 1; }
+        }
+        .message-enter {
+          animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        ::-webkit-scrollbar {
+          width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
       `}</style>
 
-      <div style={containerStyle}>
-        <div style={chatContainerStyle}>
-          <div style={headerStyle}>
-            <div style={avatarStyle}>🤖</div>
-            <h1 style={titleStyle}>Assistant B2Scala</h1>
-            <div style={statusStyle}>
-              <span style={statusDotStyle}></span>
-              En ligne - Prêt à vous aider
+      <div style={{height: '100vh', background: '#f8fafc'}}>
+        <div style={{width: '100%', height: '100%', background: 'white', display: 'flex', flexDirection: 'column'}}>
+          
+          {/* En-tête */}
+          <div style={{padding: '24px 32px', borderBottom: '1px solid #e2e8f0', background: 'white'}}>
+            <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+              <div style={{width: '44px', height: '44px', background: '#1e293b', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'}}>
+                <Sparkles style={{width: '24px', height: '24px', color: 'white'}} />
+              </div>
+              <div>
+                <h1 style={{fontSize: '18px', fontWeight: '600', color: '#1e293b', margin: 0}}>B2Scala</h1>
+                <p style={{fontSize: '12px', color: '#64748b', margin: 0}}>Assistant IA</p>
+              </div>
             </div>
           </div>
 
-          <div style={messagesStyle}>
+          {/* Zone de messages */}
+          <div style={{flex: 1, overflowY: 'auto', padding: '24px 32px', background: '#f8fafc'}}>
             {messages.length === 0 && (
-              <div style={welcomeStyle}>
-                <div style={{fontSize: '48px', marginBottom: '15px'}}>💬</div>
-                <h3 style={{fontSize: '18px', fontWeight: '600', marginBottom: '10px'}}>Bienvenue !</h3>
-                <p style={{marginBottom: '20px', lineHeight: '1.5'}}>
-                  Je suis votre assistant IA B2Scala. Comment puis-je vous aider aujourd'hui ?
+              <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '48px', textAlign: 'center'}}>
+                <div style={{width: '80px', height: '80px', background: '#1e293b', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'}}>
+                  <Sparkles style={{width: '40px', height: '40px', color: 'white'}} />
+                </div>
+                <h2 style={{fontSize: '24px', fontWeight: '600', color: '#1e293b', marginBottom: '8px'}}>
+                  Bonjour !
+                </h2>
+                <p style={{color: '#475569', marginBottom: '32px', maxWidth: '500px', fontSize: '14px'}}>
+                  Comment puis-je vous aider aujourd'hui ?
                 </p>
-                <div style={quickActionsStyle}>
-                  <div style={quickActionStyle} onClick={() => sendQuickMessage('Bonjour !')}>👋 Dire bonjour</div>
-                  <div style={quickActionStyle} onClick={() => sendQuickMessage('Comment ça va ?')}>😊 Comment ça va ?</div>
-                  <div style={quickActionStyle} onClick={() => sendQuickMessage('Aide-moi avec B2Scala')}>❓ Aide B2Scala</div>
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', width: '100%', maxWidth: '600px'}}>
+                  {[
+                    { icon: Zap, text: "C'est quoi B2Scala ?" },
+                    { icon: Code, text: "Exemples de code" },
+                    { icon: Sparkles, text: "Démarrer un projet" },
+                    { icon: BookOpen, text: "Documentation" }
+                  ].map((action, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => sendQuickMessage(action.text)}
+                      style={{background: 'white', border: '1px solid #e2e8f0', padding: '12px 16px', borderRadius: '12px', fontWeight: '500', fontSize: '14px', color: '#334155', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', transition: 'all 0.2s'}}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#f8fafc';
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'white';
+                        e.currentTarget.style.borderColor = '#e2e8f0';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      <action.icon style={{width: '16px', height: '16px'}} />
+                      {action.text}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
 
             {messages.map((msg, index) => (
-              <div key={index} style={messageStyle(msg.role === 'user')}>
-                <div style={messageBubbleStyle(msg.role === 'user')}>
-                  {msg.role === 'bot' ? formatMessage(msg.text) : msg.text}
-                </div>
-                <div style={timeStyle(msg.role === 'user')}>
-                  {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              <div key={index} className="message-enter" style={{display: 'flex', marginBottom: '16px', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'}}>
+                <div style={{maxWidth: '75%'}}>
+                  <div style={{padding: '12px 20px', borderRadius: '16px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontSize: '14px', lineHeight: '1.6', ...(msg.role === 'user' ? {background: '#1e293b', color: 'white', borderBottomRightRadius: '4px'} : {background: 'white', color: '#1e293b', border: '1px solid #e2e8f0', borderBottomLeftRadius: '4px'})}}>
+                    <div>
+                      {msg.role === 'bot' ? formatMessage(msg.text) : msg.text}
+                    </div>
+                  </div>
+                  <div style={{fontSize: '11px', color: '#94a3b8', marginTop: '6px', padding: '0 8px', textAlign: msg.role === 'user' ? 'right' : 'left'}}>
+                    {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
               </div>
             ))}
 
             {isLoading && (
-              <div style={typingStyle}>
-                <div style={typingBubbleStyle}>
-                  <div style={typingDotsStyle}>
-                    <div style={typingDotStyle(0)}></div>
-                    <div style={typingDotStyle(0.2)}></div>
-                    <div style={typingDotStyle(0.4)}></div>
-                    <span style={{marginLeft: '10px', color: '#64748b', fontSize: '13px'}}>En train de réfléchir...</span>
+              <div className="message-enter" style={{display: 'flex', justifyContent: 'flex-start', marginBottom: '16px'}}>
+                <div style={{background: 'white', padding: '12px 20px', borderRadius: '16px', borderBottomLeftRadius: '4px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)'}}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <div style={{display: 'flex', gap: '4px'}}>
+                      {[0, 1, 2].map(i => (
+                        <div
+                          key={i}
+                          style={{width: '8px', height: '8px', background: '#94a3b8', borderRadius: '50%', animation: 'typing 1.4s infinite', animationDelay: `${i * 0.2}s`}}
+                        ></div>
+                      ))}
+                    </div>
+                    <span style={{color: '#64748b', fontSize: '14px'}}>Réflexion...</span>
                   </div>
                 </div>
               </div>
@@ -210,30 +257,57 @@ export default function Chat() {
             <div ref={bottomRef} />
           </div>
 
-          <div style={inputContainerStyle}>
-            <div style={inputWrapperStyle}>
+          {/* Zone de saisie */}
+          <div style={{padding: '24px 32px', background: 'white', borderTop: '1px solid #e2e8f0'}}>
+            <div style={{display: 'flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', borderRadius: '16px', padding: '6px', border: '1px solid #e2e8f0'}}>
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSubmit(e)}
-                placeholder="Tapez votre message..."
+                placeholder="Votre message..."
                 disabled={isLoading}
-                style={inputStyle}
+                style={{flex: 1, background: 'transparent', border: 'none', outline: 'none', padding: '10px 16px', color: '#1e293b', fontSize: '14px'}}
               />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.scala,.py,.java,.js,.txt"
+                onChange={handleFileUpload}
+                style={{display: 'none'}}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                style={{width: '40px', height: '40px', borderRadius: '12px', border: isUploading ? 'none' : '1px solid #cbd5e1', background: isUploading ? '#e2e8f0' : 'white', cursor: isUploading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'}}
+                title="Télécharger un fichier"
+              >
+                {isUploading ? (
+                  <div style={{width: '16px', height: '16px', border: '2px solid #cbd5e1', borderTopColor: '#475569', borderRadius: '50%', animation: 'spin 1s linear infinite'}}></div>
+                ) : (
+                  <Paperclip style={{width: '16px', height: '16px', color: '#475569'}} />
+                )}
+              </button>
               <button
                 onClick={handleSubmit}
                 disabled={!query.trim() || isLoading}
-                style={sendButtonStyle}
+                style={{width: '40px', height: '40px', borderRadius: '12px', border: 'none', background: (!query.trim() || isLoading) ? '#e2e8f0' : '#1e293b', cursor: (!query.trim() || isLoading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'}}
               >
                 {isLoading ? (
-                  <div style={{ width: '16px', height: '16px', border: '2px solid #ccc', borderTop: '2px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                ) : ('➤')}
+                  <div style={{width: '16px', height: '16px', border: '2px solid #cbd5e1', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite'}}></div>
+                ) : (
+                  <Send style={{width: '16px', height: '16px', color: 'white'}} />
+                )}
               </button>
             </div>
           </div>
         </div>
       </div>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   );
 }
