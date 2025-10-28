@@ -36,5 +36,4 @@ Le projet combine :
 ---
 
  
-git clone https://github.com/votre-utilisateur/B2Scala-RAG.git
 cd B2Scala-RAG
