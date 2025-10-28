@@ -36,4 +36,3 @@ Le projet combine :
 ---
 
  
-cd B2Scala-RAG
