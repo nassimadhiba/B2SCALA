@@ -1,70 +1,40 @@
-# Getting Started with Create React App
+# B2Scala : Génération de Code B2Scala avec RAG
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Description
+ 
+L'objectif est de développer un **système de génération automatique de code B2Scala** basé sur la technologie **RAG (Retrieval-Augmented Generation)**, permettant de produire du code fonctionnel et commenté à partir de documents techniques, de codes sources existants et de contenus web.
 
-## Available Scripts
+Le projet combine :
 
-In the project directory, you can run:
+- **LLM local** (Large Language Model, ex. LLaMA) pour la génération de code.
+- **Base de connaissances vectorielle** pour la récupération des informations pertinentes.
+- **Pipeline RAG** pour intégrer recherche et génération de code.
+- **API FastAPI** et interface web React pour l’interaction avec le système.
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Fonctionnalités
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- Génération automatique de code B2Scala à partir d’un brouillon ou d’une question.
+- Recherche sémantique dans une base de connaissances locale pour contextualiser le code.
+- Interface web simple pour poser des questions et obtenir du code commenté.
+- Évaluation des résultats avec des métriques de qualité (BLEU, CodeBLEU, F1-Score, Similarité cosinus).
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Technologies et outils
 
-### `npm run build`
+**Langages :** Python,  JavaScript / React  
+**Bibliothèques Python :**  
+- Extraction et traitement de documents : `PyPDF2`, `pdfplumber`, `python-docx`  
+- Recherche et embeddings : `sentence-transformers`, `FAISS`, `ChromaDB`, `langchain`  
+- API et serveur : `FastAPI`, `Uvicorn`, `pyngrok`, `nest_asyncio`  
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+**LLM :** LLaMA (via API Groq)  
+**Déploiement :** Google Colab, VS Code, Ngrok
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+ 
+git clone https://github.com/votre-utilisateur/B2Scala-RAG.git
+cd B2Scala-RAG
